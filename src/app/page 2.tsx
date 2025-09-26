@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import AIModal from '@/components/AIModal'
+import { useState, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -25,6 +24,7 @@ import {
   TrashIcon,
   BoldIcon,
   ItalicIcon,
+  UnderlineIcon,
   StrikethroughIcon,
   CodeIcon,
   LinkIcon,
@@ -36,15 +36,14 @@ import {
   MoreHorizontalIcon,
   UndoIcon,
   RedoIcon,
-  ImageIcon
+  ImageIcon,
+  PaperclipIcon
 } from 'lucide-react'
 
 export default function Home() {
   const [selectedNote, setSelectedNote] = useState<string | null>(null)
   const [selectedFolder, setSelectedFolder] = useState<string>('all-notes')
   const [noteContent, setNoteContent] = useState('')
-  const [isAIModalOpen, setIsAIModalOpen] = useState(false)
-  const [selectedText, setSelectedText] = useState('')
 
   const folders = [
     { id: 'all-notes', name: 'All Notes', icon: FileTextIcon, color: 'text-blue-600' },
@@ -109,6 +108,7 @@ export default function Home() {
         bold: false,
         italic: false,
         strike: false,
+        history: true, // Enable history in StarterKit
       }),
       Placeholder.configure({
         placeholder: 'Start writing your note...',
@@ -180,30 +180,6 @@ export default function Home() {
     if (url) {
       editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
     }
-  }
-
-  const handleAIModalOpen = () => {
-    const selection = editor?.state.selection
-    if (selection && !selection.empty) {
-      const text = editor?.state.doc.textBetween(selection.from, selection.to, '\n')
-      setSelectedText(text || '')
-    } else {
-      setSelectedText('')
-    }
-    setIsAIModalOpen(true)
-  }
-
-  const handleInsertContent = (content: string, replace = false) => {
-    if (!editor) return
-
-    if (replace && selectedText) {
-      editor.chain().focus().deleteSelection().insertContent(content).run()
-    } else {
-      editor.chain().focus().insertContent(content).run()
-    }
-
-    const updatedContent = editor.getHTML()
-    setNoteContent(updatedContent)
   }
 
   // Check if buttons should be active
@@ -300,10 +276,7 @@ export default function Home() {
 
             <div className="w-px h-6 bg-gray-300 mx-1"></div>
 
-            <button
-              onClick={handleAIModalOpen}
-              className="px-3 py-1.5 text-sm bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors"
-            >
+            <button className="px-3 py-1.5 text-sm bg-gray-900 text-white rounded-md hover:bg-gray-800">
               AI
             </button>
           </div>
@@ -453,7 +426,7 @@ export default function Home() {
                   Welcome to NoteAI
                 </h2>
                 <p className="text-gray-600">
-                  This is your advanced note-taking app with AI functionality. Here&apos;s what you can do:
+                  This is your advanced note-taking app with AI functionality. Here's what you can do:
                 </p>
               </div>
 
@@ -503,15 +476,6 @@ export default function Home() {
         )}
         </div>
       </div>
-
-      {/* AI Modal */}
-      <AIModal
-        isOpen={isAIModalOpen}
-        onClose={() => setIsAIModalOpen(false)}
-        onInsertContent={handleInsertContent}
-        selectedText={selectedText}
-        noteContent={noteContent}
-      />
     </div>
   )
 }
