@@ -1,17 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NoteFlow
+
+An advanced note-taking application built with Next.js 15 and React 19, featuring a rich text editor powered by Tiptap and AI-powered content enhancement.
+
+## Prerequisites
+
+- Node.js 18+
+- OpenAI API key for AI features
+
+## Environment Setup
+
+1. Copy the environment template:
+```bash
+cp .env.local.example .env.local
+```
+
+2. Add your OpenAI API key to `.env.local`:
+```env
+OPENAI_API_KEY=your_actual_api_key_here
+```
+
+⚠️ **Security Note**: Never commit your `.env.local` file to version control. The actual API key should only exist in your local environment and production environment variables.
 
 ## Getting Started
 
-First, run the development server:
+First, install dependencies and run the development server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.

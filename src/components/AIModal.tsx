@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { X, Loader2, Copy, CornerDownLeft, Sparkles, Wand2, BarChart3, ArrowLeftRight } from 'lucide-react'
+import DOMPurify from 'isomorphic-dompurify'
 import { getAIFeaturesByCategory, processAIRequest, AIRequest } from '@/lib/ai'
 
 interface AIModalProps {
@@ -304,7 +305,9 @@ export default function AIModal({ isOpen, onClose, onInsertContent, selectedText
                           <div
                             className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap overflow-auto"
                             style={{ maxHeight: '400px' }}
-                            dangerouslySetInnerHTML={{ __html: result.replace(/\n/g, '<br>') }}
+                            dangerouslySetInnerHTML={{
+                              __html: DOMPurify.sanitize(result.replace(/\n/g, '<br>'))
+                            }}
                           />
                         </div>
                       </div>

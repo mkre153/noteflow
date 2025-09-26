@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import AIModal from '@/components/AIModal'
+import { useNoteStore } from '@/store/noteStore'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -40,111 +41,91 @@ import {
 } from 'lucide-react'
 
 export default function Home() {
-  const [selectedNote, setSelectedNote] = useState<string | null>(null)
-  const [selectedFolder, setSelectedFolder] = useState<string>('all-notes')
-  const [noteContent, setNoteContent] = useState('')
-  const [isAIModalOpen, setIsAIModalOpen] = useState(false)
-  const [selectedText, setSelectedText] = useState('')
+  // Use Zustand store instead of local state
+  const {
+    selectedNote,
+    selectedFolder,
+    noteContent,
+    isAIModalOpen,
+    selectedText,
+    notes,
+    folders,
+    customFolders,
+    setSelectedNote,
+    setSelectedFolder,
+    updateNoteContent,
+    setIsAIModalOpen,
+    setSelectedText,
+    createNote,
+    createFolder,
+    getFilteredNotes
+  } = useNoteStore()
 
-  const folders = [
-    { id: 'all-notes', name: 'All Notes', icon: FileTextIcon, color: 'text-blue-600' },
-    { id: 'favorites', name: 'Favorites', icon: StarIcon, color: 'text-yellow-500' },
-    { id: 'archived', name: 'Archived', icon: ArchiveIcon, color: 'text-gray-500' },
-    { id: 'trash', name: 'Trash', icon: TrashIcon, color: 'text-red-500' },
-  ]
+  // Get filtered notes based on selected folder
+  const filteredNotes = useMemo(() => getFilteredNotes(), [getFilteredNotes])
 
-  const customFolders = [
-    { id: 'work', name: 'Work', icon: FolderIcon, color: 'text-blue-500' },
-    { id: 'personal', name: 'Personal', icon: FolderIcon, color: 'text-green-500' },
-    { id: 'projects', name: 'Projects', icon: FolderIcon, color: 'text-purple-500' },
-  ]
+  // Icon mapping for folder icons stored as strings in the store
+  const getIconComponent = useCallback((iconName: string) => {
+    const iconMap = {
+      FileText: FileTextIcon,
+      Star: StarIcon,
+      Archive: ArchiveIcon,
+      Trash: TrashIcon,
+      Folder: FolderIcon
+    }
+    return iconMap[iconName as keyof typeof iconMap] || FolderIcon
+  }, [])
 
-  const notes = [
-    {
-      id: '1',
-      title: 'Welcome to NoteAI!',
-      preview: 'Welcome to NoteAI! This is your advanced note-taking app with AI functionality...',
-      date: 'Sep 22, 2025',
-      favorite: true,
-      content: `<h1>Welcome to NoteAI</h1>
-<p>This is your advanced note-taking app with AI functionality. Here's what you can do:</p>
-<p>✨ <strong>Features</strong></p>
-<p><strong>Rich Text Editing:</strong> Format your notes with headings, lists, code blocks, and more</p>
-<p><strong>Organization:</strong> Create folders to organize your notes</p>
-<p><strong>Search:</strong> Quickly find notes with powerful search</p>
-<p><strong>AI Assistant:</strong> Get help with writing and summarizing (coming soon)</p>
-<p>🚀 <strong>Getting Started</strong></p>
-<ul>
-<li>Click the + button to create a new note</li>
-<li>Use the folder icon to create folders for organization</li>
-<li>Start typing to auto-save your content</li>
-<li>Use the toolbar for formatting options</li>
-</ul>
-<p><em>Try creating your first note and exploring the features!</em></p>`
-    },
-    {
-      id: '2',
-      title: 'Sample Note',
-      preview: 'This is a sample note with some content...',
-      date: 'Sep 22, 2025',
-      favorite: false,
-      content: `<h2>Sample Note</h2>
-<p>This is a <strong>sample note</strong> with some <em>formatted content</em>.</p>
-<ul>
-<li>Item 1</li>
-<li>Item 2</li>
-<li>Item 3</li>
-</ul>`
-    },
-  ]
+  // Memoize extensions to prevent recreation on every render
+  const extensions = useMemo(() => [
+    StarterKit.configure({
+      heading: false,
+      bulletList: false,
+      orderedList: false,
+      listItem: false,
+      bold: false,
+      italic: false,
+      strike: false,
+    }),
+    Placeholder.configure({
+      placeholder: 'Start writing your note...',
+    }),
+    Bold,
+    Italic,
+    Strike,
+    Underline,
+    Heading.configure({
+      levels: [1, 2, 3],
+      HTMLAttributes: {
+        class: 'tiptap-heading',
+      },
+    }),
+    BulletList.configure({
+      HTMLAttributes: {
+        class: 'tiptap-bullet-list',
+      },
+    }),
+    OrderedList.configure({
+      HTMLAttributes: {
+        class: 'tiptap-ordered-list',
+      },
+    }),
+    ListItem,
+    Link.configure({
+      openOnClick: false,
+      HTMLAttributes: {
+        class: 'text-blue-600 underline hover:text-blue-800',
+      },
+    }),
+  ], [])
 
-  // Initialize editor with extensions
+  // Initialize editor with memoized extensions
   const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: false,
-        bulletList: false,
-        orderedList: false,
-        listItem: false,
-        bold: false,
-        italic: false,
-        strike: false,
-      }),
-      Placeholder.configure({
-        placeholder: 'Start writing your note...',
-      }),
-      Bold,
-      Italic,
-      Strike,
-      Underline,
-      Heading.configure({
-        levels: [1, 2, 3],
-        HTMLAttributes: {
-          class: 'tiptap-heading',
-        },
-      }),
-      BulletList.configure({
-        HTMLAttributes: {
-          class: 'tiptap-bullet-list',
-        },
-      }),
-      OrderedList.configure({
-        HTMLAttributes: {
-          class: 'tiptap-ordered-list',
-        },
-      }),
-      ListItem,
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: 'text-blue-600 underline hover:text-blue-800',
-        },
-      }),
-    ],
+    extensions,
     content: noteContent,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      setNoteContent(editor.getHTML())
+      updateNoteContent(editor.getHTML())
     },
     editorProps: {
       attributes: {
@@ -153,36 +134,36 @@ export default function Home() {
     },
   })
 
-  // Handle note selection
-  const handleNoteSelect = (noteId: string) => {
+  // Memoize note selection handler
+  const handleNoteSelect = useCallback((noteId: string) => {
     setSelectedNote(noteId)
     const note = notes.find(n => n.id === noteId)
     if (note && editor) {
       editor.commands.setContent(note.content)
-      setNoteContent(note.content)
+      updateNoteContent(note.content)
     }
-  }
+  }, [notes, editor, setSelectedNote, updateNoteContent])
 
-  // Toolbar actions
-  const handleBold = () => editor?.chain().focus().toggleBold().run()
-  const handleItalic = () => editor?.chain().focus().toggleItalic().run()
-  const handleStrike = () => editor?.chain().focus().toggleStrike().run()
-  const handleCode = () => editor?.chain().focus().toggleCode().run()
-  const handleH1 = () => editor?.chain().focus().toggleHeading({ level: 1 }).run()
-  const handleH2 = () => editor?.chain().focus().toggleHeading({ level: 2 }).run()
-  const handleH3 = () => editor?.chain().focus().toggleHeading({ level: 3 }).run()
-  const handleBulletList = () => editor?.chain().focus().toggleBulletList().run()
-  const handleOrderedList = () => editor?.chain().focus().toggleOrderedList().run()
-  const handleUndo = () => editor?.chain().focus().undo().run()
-  const handleRedo = () => editor?.chain().focus().redo().run()
-  const handleLink = () => {
+  // Memoize toolbar action handlers to prevent recreation on every render
+  const handleBold = useCallback(() => editor?.chain().focus().toggleBold().run(), [editor])
+  const handleItalic = useCallback(() => editor?.chain().focus().toggleItalic().run(), [editor])
+  const handleStrike = useCallback(() => editor?.chain().focus().toggleStrike().run(), [editor])
+  const handleCode = useCallback(() => editor?.chain().focus().toggleCode().run(), [editor])
+  const handleH1 = useCallback(() => editor?.chain().focus().toggleHeading({ level: 1 }).run(), [editor])
+  const handleH2 = useCallback(() => editor?.chain().focus().toggleHeading({ level: 2 }).run(), [editor])
+  const handleH3 = useCallback(() => editor?.chain().focus().toggleHeading({ level: 3 }).run(), [editor])
+  const handleBulletList = useCallback(() => editor?.chain().focus().toggleBulletList().run(), [editor])
+  const handleOrderedList = useCallback(() => editor?.chain().focus().toggleOrderedList().run(), [editor])
+  const handleUndo = useCallback(() => editor?.chain().focus().undo().run(), [editor])
+  const handleRedo = useCallback(() => editor?.chain().focus().redo().run(), [editor])
+  const handleLink = useCallback(() => {
     const url = window.prompt('Enter URL:')
     if (url) {
       editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
     }
-  }
+  }, [editor])
 
-  const handleAIModalOpen = () => {
+  const handleAIModalOpen = useCallback(() => {
     const selection = editor?.state.selection
     if (selection && !selection.empty) {
       const text = editor?.state.doc.textBetween(selection.from, selection.to, '\n')
@@ -191,9 +172,9 @@ export default function Home() {
       setSelectedText('')
     }
     setIsAIModalOpen(true)
-  }
+  }, [editor, setSelectedText, setIsAIModalOpen])
 
-  const handleInsertContent = (content: string, replace = false) => {
+  const handleInsertContent = useCallback((content: string, replace = false) => {
     if (!editor) return
 
     if (replace && selectedText) {
@@ -203,19 +184,43 @@ export default function Home() {
     }
 
     const updatedContent = editor.getHTML()
-    setNoteContent(updatedContent)
-  }
+    updateNoteContent(updatedContent)
+  }, [editor, selectedText, updateNoteContent])
 
-  // Check if buttons should be active
-  const isBold = editor?.isActive('bold')
-  const isItalic = editor?.isActive('italic')
-  const isStrike = editor?.isActive('strike')
-  const isCode = editor?.isActive('code')
-  const isH1 = editor?.isActive('heading', { level: 1 })
-  const isH2 = editor?.isActive('heading', { level: 2 })
-  const isH3 = editor?.isActive('heading', { level: 3 })
-  const isBulletList = editor?.isActive('bulletList')
-  const isOrderedList = editor?.isActive('orderedList')
+  // Add handlers for creating notes and folders
+  const handleCreateNote = useCallback(() => {
+    const title = prompt('Enter note title:') || 'Untitled Note'
+    createNote(title, selectedFolder === 'all-notes' ? undefined : selectedFolder)
+
+    // Focus the editor after creating the note
+    setTimeout(() => {
+      editor?.commands.focus()
+    }, 100)
+  }, [createNote, selectedFolder, editor])
+
+  const handleCreateFolder = useCallback(() => {
+    const name = prompt('Enter folder name:')
+    if (name?.trim()) {
+      const colors = ['text-blue-500', 'text-green-500', 'text-purple-500', 'text-red-500', 'text-yellow-500']
+      const randomColor = colors[Math.floor(Math.random() * colors.length)]
+      createFolder(name.trim(), randomColor)
+    }
+  }, [createFolder])
+
+  // Memoize button active states for performance
+  const toolbarStates = useMemo(() => ({
+    isBold: editor?.isActive('bold'),
+    isItalic: editor?.isActive('italic'),
+    isStrike: editor?.isActive('strike'),
+    isCode: editor?.isActive('code'),
+    isH1: editor?.isActive('heading', { level: 1 }),
+    isH2: editor?.isActive('heading', { level: 2 }),
+    isH3: editor?.isActive('heading', { level: 3 }),
+    isBulletList: editor?.isActive('bulletList'),
+    isOrderedList: editor?.isActive('orderedList'),
+  }), [editor])
+
+  const { isBold, isItalic, isStrike, isCode, isH1, isH2, isH3, isBulletList, isOrderedList } = toolbarStates
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -226,7 +231,11 @@ export default function Home() {
             <h1 className="text-lg font-semibold text-gray-900">NoteAI</h1>
 
             <div className="flex items-center space-x-1">
-              <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded">
+              <button
+                onClick={handleCreateNote}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                title="Create new note"
+              >
                 <PlusIcon className="w-4 h-4" />
               </button>
               <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded">
@@ -348,7 +357,7 @@ export default function Home() {
           {/* System Folders */}
           <div className="space-y-1 mb-6">
             {folders.map((folder) => {
-              const IconComponent = folder.icon
+              const IconComponent = getIconComponent(folder.icon)
               return (
                 <button
                   key={folder.id}
@@ -370,13 +379,17 @@ export default function Home() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Folders</h3>
-              <button className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={handleCreateFolder}
+                className="text-gray-400 hover:text-gray-600"
+                title="Create new folder"
+              >
                 <PlusIcon className="w-4 h-4" />
               </button>
             </div>
             <div className="space-y-1">
               {customFolders.map((folder) => {
-                const IconComponent = folder.icon
+                const IconComponent = getIconComponent(folder.icon)
                 return (
                   <button
                     key={folder.id}
@@ -399,7 +412,7 @@ export default function Home() {
         {/* Notes List */}
         <div className="border-t border-gray-200 p-4 max-h-80 overflow-y-auto">
           <div className="space-y-2">
-            {notes.map((note) => (
+            {filteredNotes.map((note) => (
               <div
                 key={note.id}
                 onClick={() => handleNoteSelect(note.id)}

@@ -1,0 +1,183 @@
+#!/bin/bash
+
+# Code Review Subagent
+# Performs comprehensive code review focusing on efficiency and optimization
+
+echo "🔍 Starting Code Review Analysis..."
+echo "=================================="
+
+TARGET_DIR="${1:-.}"
+REPORT_FILE="${TARGET_DIR}/.claude/reports/code-review-$(date +%Y%m%d-%H%M%S).md"
+
+# Create reports directory if it doesn't exist
+mkdir -p "$(dirname "$REPORT_FILE")"
+
+echo "# Code Review Report" > "$REPORT_FILE"
+echo "Generated: $(date)" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+# 1. Performance Analysis
+echo "## 🚀 Performance Analysis" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+echo "📊 Analyzing performance patterns..."
+
+# Check for performance anti-patterns
+echo "### Performance Issues Found:" >> "$REPORT_FILE"
+
+# Large bundle analysis
+if [ -f "package.json" ]; then
+    echo "- Analyzing bundle size..." >> "$REPORT_FILE"
+    if command -v bundlephobia &> /dev/null; then
+        bundlephobia package.json >> "$REPORT_FILE" 2>/dev/null || echo "  - Bundle analysis tool not available" >> "$REPORT_FILE"
+    else
+        echo "  - Install bundlephobia for detailed bundle analysis" >> "$REPORT_FILE"
+    fi
+fi
+
+# Memory leak patterns
+rg -n "addEventListener|setInterval|setTimeout" --type js --type ts "$TARGET_DIR" | head -10 >> /tmp/event_listeners.tmp 2>/dev/null
+if [ -s /tmp/event_listeners.tmp ]; then
+    echo "- **Event Listeners Found** (check for cleanup):" >> "$REPORT_FILE"
+    cat /tmp/event_listeners.tmp >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
+fi
+
+# Inefficient loops
+rg -n "for.*in.*Object\.|forEach.*Object\." --type js --type ts "$TARGET_DIR" | head -5 >> /tmp/loops.tmp 2>/dev/null
+if [ -s /tmp/loops.tmp ]; then
+    echo "- **Potentially Inefficient Object Iterations:**" >> "$REPORT_FILE"
+    cat /tmp/loops.tmp >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
+fi
+
+# 2. Code Efficiency Analysis
+echo "## ⚡ Efficiency Analysis" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+echo "🔧 Analyzing code efficiency..."
+
+# React-specific optimizations
+if rg -q "import.*react" "$TARGET_DIR"; then
+    echo "### React Optimizations:" >> "$REPORT_FILE"
+
+    # Missing React.memo
+    rg -n "export.*function.*\(" --type tsx --type jsx "$TARGET_DIR" | head -5 >> /tmp/components.tmp 2>/dev/null
+    if [ -s /tmp/components.tmp ]; then
+        echo "- **Components that might benefit from React.memo:**" >> "$REPORT_FILE"
+        cat /tmp/components.tmp >> "$REPORT_FILE"
+        echo "" >> "$REPORT_FILE"
+    fi
+
+    # useCallback/useMemo opportunities
+    rg -n "const.*=.*\(" --type tsx --type jsx "$TARGET_DIR" | rg -v "useCallback|useMemo" | head -5 >> /tmp/callbacks.tmp 2>/dev/null
+    if [ -s /tmp/callbacks.tmp ]; then
+        echo "- **Functions that might benefit from useCallback:**" >> "$REPORT_FILE"
+        cat /tmp/callbacks.tmp >> "$REPORT_FILE"
+        echo "" >> "$REPORT_FILE"
+    fi
+fi
+
+# Database query optimizations
+rg -n "SELECT \*|\.find\(\)|\.filter\(" --type js --type ts "$TARGET_DIR" | head -5 >> /tmp/queries.tmp 2>/dev/null
+if [ -s /tmp/queries.tmp ]; then
+    echo "### Query Optimizations:" >> "$REPORT_FILE"
+    echo "- **Potentially inefficient queries/operations:**" >> "$REPORT_FILE"
+    cat /tmp/queries.tmp >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
+fi
+
+# 3. Code Quality Analysis
+echo "## 📝 Code Quality" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+echo "📋 Analyzing code quality..."
+
+# Complexity analysis
+echo "### Complexity Issues:" >> "$REPORT_FILE"
+
+# Long functions
+rg -n "function|const.*=.*\(" --type js --type ts "$TARGET_DIR" -A 50 | rg -c "^--$" > /tmp/function_count.tmp 2>/dev/null
+if [ -s /tmp/function_count.tmp ]; then
+    FUNC_COUNT=$(cat /tmp/function_count.tmp)
+    echo "- **Total functions analyzed:** $FUNC_COUNT" >> "$REPORT_FILE"
+fi
+
+# Deep nesting
+rg -n "^\s{20,}" --type js --type ts "$TARGET_DIR" | head -3 >> /tmp/nesting.tmp 2>/dev/null
+if [ -s /tmp/nesting.tmp ]; then
+    echo "- **Deep nesting found (>5 levels):**" >> "$REPORT_FILE"
+    cat /tmp/nesting.tmp >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
+fi
+
+# Duplicate code patterns
+echo "### Code Duplication:" >> "$REPORT_FILE"
+rg -n "console\.log|TODO|FIXME|XXX" --type js --type ts "$TARGET_DIR" | head -5 >> /tmp/issues.tmp 2>/dev/null
+if [ -s /tmp/issues.tmp ]; then
+    echo "- **Code issues to address:**" >> "$REPORT_FILE"
+    cat /tmp/issues.tmp >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
+fi
+
+# 4. Security Considerations
+echo "## 🔒 Security & Best Practices" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+echo "🛡️  Analyzing security patterns..."
+
+# Security anti-patterns
+rg -n "innerHTML|eval\(|Function\(|dangerouslySetInnerHTML" --type js --type ts "$TARGET_DIR" | head -3 >> /tmp/security.tmp 2>/dev/null
+if [ -s /tmp/security.tmp ]; then
+    echo "- **Security concerns found:**" >> "$REPORT_FILE"
+    cat /tmp/security.tmp >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
+fi
+
+# 5. Optimization Recommendations
+echo "## 💡 Optimization Recommendations" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+echo "### High Priority:" >> "$REPORT_FILE"
+echo "1. **Bundle Size**: Consider code splitting and lazy loading" >> "$REPORT_FILE"
+echo "2. **Memoization**: Add React.memo, useMemo, useCallback where beneficial" >> "$REPORT_FILE"
+echo "3. **Event Cleanup**: Ensure all event listeners are properly removed" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+echo "### Medium Priority:" >> "$REPORT_FILE"
+echo "1. **Function Optimization**: Break down complex functions" >> "$REPORT_FILE"
+echo "2. **Loop Optimization**: Use efficient iteration methods" >> "$REPORT_FILE"
+echo "3. **Async Operations**: Implement proper error handling and loading states" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+echo "### Low Priority:" >> "$REPORT_FILE"
+echo "1. **Code Organization**: Extract reusable utilities" >> "$REPORT_FILE"
+echo "2. **Type Safety**: Add comprehensive TypeScript types" >> "$REPORT_FILE"
+echo "3. **Documentation**: Add JSDoc comments for complex functions" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+# 6. Performance Metrics (if available)
+if [ -f "package.json" ] && command -v npm &> /dev/null; then
+    echo "## 📊 Performance Metrics" >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
+
+    if npm list --depth=0 | rg -q "@next/bundle-analyzer|webpack-bundle-analyzer"; then
+        echo "- Bundle analyzer available for detailed analysis" >> "$REPORT_FILE"
+    else
+        echo "- Consider adding bundle analyzer for detailed metrics" >> "$REPORT_FILE"
+    fi
+    echo "" >> "$REPORT_FILE"
+fi
+
+# Cleanup temp files
+rm -f /tmp/event_listeners.tmp /tmp/loops.tmp /tmp/components.tmp /tmp/callbacks.tmp /tmp/queries.tmp /tmp/function_count.tmp /tmp/nesting.tmp /tmp/issues.tmp /tmp/security.tmp
+
+echo "✅ Code review complete!"
+echo "📄 Report saved to: $REPORT_FILE"
+echo ""
+echo "📋 Summary:"
+echo "- Performance patterns analyzed"
+echo "- Efficiency opportunities identified"
+echo "- Code quality assessed"
+echo "- Security considerations reviewed"
+echo "- Optimization recommendations provided"

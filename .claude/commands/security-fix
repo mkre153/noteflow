@@ -1,0 +1,89 @@
+---
+description: Apply security fixes and recommendations
+argument-hint: [fix-type] [target]
+---
+
+# 🔧 Security Fix Implementation
+
+Applying security fixes for: `$1` on target: `$2`
+
+## Available Fixes:
+
+### 1. Headers (security-headers)
+If `$1` contains "headers":
+```javascript
+// Adding security headers to next.config.js
+const securityHeaders = [
+  { key: 'X-DNS-Prefetch-Control', value: 'on' },
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+  { key: 'X-XSS-Protection', value: '1; mode=block' },
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'origin-when-cross-origin' }
+]
+
+module.exports = {
+  async headers() {
+    return [{ source: '/(.*)', headers: securityHeaders }]
+  }
+}
+```
+
+### 2. Rate Limiting (rate-limit)
+If `$1` contains "rate":
+```bash
+npm install express-rate-limit
+```
+
+### 3. Input Validation (validation)
+If `$1` contains "validation":
+```bash
+npm install zod joi express-validator
+```
+
+### 4. Environment Security (env)
+If `$1` contains "env":
+```bash
+# Ensure .env files are in .gitignore
+echo -e "\n# Environment variables\n.env*\n.env.local" >> .gitignore
+```
+
+### 5. Dependency Updates (deps)
+If `$1` contains "deps":
+```bash
+npm audit fix
+npm update
+```
+
+### 6. CSP (content-security-policy)
+If `$1` contains "csp":
+```javascript
+// Content Security Policy
+const cspHeader = `
+  default-src 'self';
+  script-src 'self' 'unsafe-eval' 'unsafe-inline';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' blob: data:;
+  font-src 'self';
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+  frame-ancestors 'none';
+  upgrade-insecure-requests;
+`
+```
+
+## Implementation Guide:
+
+**Fix Type**: `$1`
+**Target**: `$2`
+
+Choose from:
+- `/security-fix headers next.config.js` - Add security headers
+- `/security-fix rate api` - Add rate limiting to API routes
+- `/security-fix validation forms` - Add input validation
+- `/security-fix env all` - Secure environment variables
+- `/security-fix deps all` - Update vulnerable dependencies
+- `/security-fix csp all` - Implement Content Security Policy
+
+**Status**: Ready to implement fixes based on your selection.

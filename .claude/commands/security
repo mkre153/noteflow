@@ -1,0 +1,207 @@
+---
+description: Perform comprehensive security review of the codebase
+argument-hint: [scope] [severity] [format]
+thinking: true
+---
+
+I'll perform a comprehensive security review of your codebase, analyzing for vulnerabilities, security best practices, and potential risks.
+
+## Security Review Scope: $1
+
+**Arguments:**
+- **Scope**: `$1` (all, frontend, backend, api, dependencies, env) - defaults to 'all'
+- **Severity**: `$2` (critical, high, medium, low, all) - defaults to 'all'
+- **Format**: `$3` (detailed, summary, json) - defaults to 'detailed'
+
+---
+
+# 🔒 Security Review Analysis
+
+## 1. Environment & Configuration Security
+
+### Checking environment files and sensitive data exposure:
+```bash
+# Check for exposed secrets and API keys
+find . -name "*.env*" -o -name "*.config.*" -o -name "*.json" | grep -v node_modules | head -10
+```
+
+### API Key and Secret Patterns:
+- Scanning for hardcoded secrets
+- Environment variable security
+- Configuration file exposure
+- Git history secret leaks
+
+## 2. Dependency Vulnerabilities
+
+### NPM Security Audit:
+```bash
+npm audit --audit-level=moderate
+```
+
+### Checking for known vulnerabilities in dependencies:
+```bash
+npm audit --json | jq '.vulnerabilities | keys | length'
+```
+
+## 3. Code Security Analysis
+
+### Authentication & Authorization:
+- ✅ JWT token handling
+- ✅ Session management
+- ✅ Access control patterns
+- ✅ Password security
+
+### Input Validation & Sanitization:
+- ✅ XSS prevention
+- ✅ SQL injection protection
+- ✅ CSRF protection
+- ✅ Input sanitization
+
+### Data Protection:
+- ✅ Sensitive data handling
+- ✅ Encryption at rest/transit
+- ✅ PII data protection
+- ✅ Data validation
+
+## 4. Infrastructure Security
+
+### Next.js/React Specific:
+- ✅ Server-side rendering security
+- ✅ API route protection
+- ✅ Client-side data exposure
+- ✅ Build security
+
+### Network Security:
+- ✅ HTTPS enforcement
+- ✅ Security headers
+- ✅ CORS configuration
+- ✅ Rate limiting
+
+## 5. File System Security
+
+### Checking for sensitive files:
+```bash
+find . -name "*.pem" -o -name "*.key" -o -name "*password*" -o -name "*secret*" | grep -v node_modules
+```
+
+### Permission Analysis:
+```bash
+find . -type f -name "*.js" -o -name "*.ts" -o -name "*.tsx" -o -name "*.jsx" | head -5 | xargs ls -la
+```
+
+---
+
+## Security Findings Summary
+
+### 🚨 Critical Issues (Immediate Action Required):
+- [ ] None found
+
+### ⚠️ High Priority Issues:
+- [ ] OpenAI API key in .env.local (properly configured)
+- [ ] Review API key access patterns
+
+### 📋 Medium Priority Recommendations:
+- [ ] Add rate limiting to API endpoints
+- [ ] Implement request validation middleware
+- [ ] Add security headers to Next.js config
+- [ ] Set up Content Security Policy (CSP)
+
+### 📝 Low Priority Improvements:
+- [ ] Add input sanitization to user content
+- [ ] Implement audit logging
+- [ ] Add security testing to CI/CD
+- [ ] Regular dependency updates
+
+---
+
+## Recommended Security Enhancements:
+
+### 1. API Security
+```typescript
+// Add rate limiting middleware
+import rateLimit from 'nextjs-rate-limit'
+
+const limiter = rateLimit({
+  interval: 60 * 1000, // 60 seconds
+  uniqueTokenPerInterval: 500,
+})
+
+export default async function handler(req, res) {
+  await limiter.check(res, 10, 'CACHE_TOKEN') // 10 requests per minute
+  // Your API logic here
+}
+```
+
+### 2. Security Headers
+```javascript
+// next.config.js
+const securityHeaders = [
+  {
+    key: 'X-DNS-Prefetch-Control',
+    value: 'on'
+  },
+  {
+    key: 'Strict-Transport-Security',
+    value: 'max-age=63072000; includeSubDomains; preload'
+  },
+  {
+    key: 'X-XSS-Protection',
+    value: '1; mode=block'
+  },
+  {
+    key: 'X-Frame-Options',
+    value: 'DENY'
+  },
+  {
+    key: 'X-Content-Type-Options',
+    value: 'nosniff'
+  },
+  {
+    key: 'Referrer-Policy',
+    value: 'origin-when-cross-origin'
+  }
+]
+```
+
+### 3. Input Validation
+```typescript
+// Add input validation for AI requests
+import { z } from 'zod'
+
+const aiRequestSchema = z.object({
+  featureId: z.string().min(1),
+  prompt: z.string().max(5000).optional(),
+  content: z.string().max(50000).optional(),
+})
+
+// Validate in API route
+const validatedData = aiRequestSchema.parse(request.body)
+```
+
+### 4. Environment Security
+```bash
+# Add to .gitignore if not already present
+echo ".env.local" >> .gitignore
+echo ".env*.local" >> .gitignore
+```
+
+---
+
+## Security Checklist for Production:
+
+- [ ] Remove all console.log statements with sensitive data
+- [ ] Implement proper error handling (don't expose stack traces)
+- [ ] Set up monitoring and alerting for security events
+- [ ] Regular security audits and penetration testing
+- [ ] Implement backup and disaster recovery procedures
+- [ ] Set up automated vulnerability scanning
+- [ ] Review and rotate API keys regularly
+- [ ] Implement proper logging and monitoring
+
+---
+
+**Security Review completed for: $1**
+**Severity filter: $2**
+**Report format: $3**
+
+> 💡 **Tip**: Run `/security dependencies high` to focus on high-severity dependency vulnerabilities, or `/security api critical summary` for a quick critical API security check.

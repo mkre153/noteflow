@@ -1,0 +1,48 @@
+---
+description: Quick security scan for common vulnerabilities
+argument-hint: [file-pattern]
+---
+
+# 🔍 Quick Security Scan
+
+Performing rapid security scan for common vulnerabilities in: `$1`
+
+## Scanning for Security Issues:
+
+### 1. Hardcoded Secrets Detection:
+```bash
+grep -r -i "password\|secret\|key\|token" --include="*.js" --include="*.ts" --include="*.tsx" --include="*.jsx" $1 . | grep -v node_modules | head -10
+```
+
+### 2. SQL Injection Patterns:
+```bash
+grep -r "query.*\+\|SELECT.*\+\|INSERT.*\+" --include="*.js" --include="*.ts" $1 . | grep -v node_modules | head -5
+```
+
+### 3. XSS Vulnerability Patterns:
+```bash
+grep -r "innerHTML\|dangerouslySetInnerHTML\|eval(" --include="*.js" --include="*.ts" --include="*.tsx" --include="*.jsx" $1 . | head -5
+```
+
+### 4. Insecure HTTP Requests:
+```bash
+grep -r "http://" --include="*.js" --include="*.ts" --include="*.tsx" --include="*.jsx" $1 . | grep -v node_modules | head -5
+```
+
+### 5. Environment Variable Exposure:
+```bash
+find $1 . -name ".env*" -not -path "./node_modules/*" | xargs ls -la 2>/dev/null || echo "No environment files found"
+```
+
+### 6. Dependency Vulnerabilities:
+```bash
+npm audit --audit-level=high | head -20
+```
+
+## Quick Security Recommendations:
+
+✅ **Found Issues**: Review the findings above
+⚠️ **Next Steps**: Run `/security all detailed` for comprehensive analysis
+📋 **Priority**: Address any hardcoded secrets immediately
+
+**Scan completed for pattern: $1**

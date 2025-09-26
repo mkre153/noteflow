@@ -1,0 +1,22 @@
+---
+description: Quick security alias - shorthand for security commands
+argument-hint: [command] [args...]
+---
+
+# 🔒 Security Quick Access
+
+**Shorthand for security commands**: `sec $ARGUMENTS`
+
+## Quick Commands:
+- `sec scan` → `/security-scan`
+- `sec fix` → `/security-fix $2 $3`
+- `sec deps` → `/security dependencies high`
+- `sec api` → `/security api all detailed`
+- `sec env` → `/security env critical`
+- `sec help` → Show security command help
+
+**Running**: `/security$1 $2 $3 $4`
+
+---
+
+💡 **Tip**: Use `sec scan` for quick checks, `sec deps` for dependency review, or `sec help` for full documentation.
